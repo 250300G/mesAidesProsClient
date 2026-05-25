@@ -1,92 +1,146 @@
-import service from "../../services/index.services";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
+import service from "../../services/index.services";
+import { Box, Container, Heading, Text, Input, Button, VStack, FormControl, FormLabel, FormErrorMessage, Link, useToast } from "@chakra-ui/react";
 
-function Signup() {
+export default function Signup() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const toast = useToast();
 
-  const navigate = useNavigate()
+  // Interception intelligente du SIRET passé en mémoire depuis l'étape précédente
+  const pendingSiret = location.state?.pendingSiret || "";
 
-  const [email, setEmail] = useState("");
+  // États du formulaire
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   
-  const [errorMessage, setErrorMessage] = useState(null)
-
-  const handleEmailChange = (e) => setEmail(e.target.value);
-  const handleUsernameChange = (e) => setUsername(e.target.value);
-  const handlePasswordChange = (e) => setPassword(e.target.value);
+  // États de gestion UI (Chargement et Erreurs)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
 
-    // ... contact backend to register the user
-    const body = {
-      email: email,
-      username: username,
-      password: password
+    // Payload de base conforme aux attentes de l'école
+    const payload = { username, email, password };
+
+    // Si un SIRET est en attente, on l'ajoute au payload pour le lier au compte créé
+    if (pendingSiret) {
+      payload.siret = pendingSiret;
     }
 
     try {
+      await service.post("/auth/signup", payload);
       
-      const response = await service.post("/auth/signup", body)
-      navigate("/login")
+      toast({
+        title: "Compte créé avec succès.",
+        description: "Vous pouvez maintenant vous connecter à votre Cockpit.",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
 
-    } catch (error) {
-      console.log(error)
-      if (error.response.status === 400) {
-        setErrorMessage(error.response.data.errorMessage)
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.data && err.response.data.errorMessage) {
+        setErrors({ server: err.response.data.errorMessage });
       } else {
-        // navigate("/error")
+        setErrors({ server: "Une erreur est survenue lors de l'inscription. Vérifiez votre connexion." });
       }
+    } finally {
+      setIsSubmitting(false);
     }
-
   };
 
   return (
-    <div>
+    <Box minH="85vh" display="flex" alignItems="center" bg="brand.bgLight" py={8} px={4}>
+      <Container maxW="md" bg="brand.cardBg" p={{ base: 6, md: 8 }} borderRadius="2xl" border="1px solid" borderColor="brand.border" shadow="sm">
+        <VStack as="form" onSubmit={handleSignup} spacing={4} align="stretch">
+          
+          <Box textAlign="center" mb={2}>
+            <Heading as="h2" size="lg" color="brand.primary" fontWeight="black" letterSpacing="tight">
+              Créer mon Cockpit
+            </Heading>
+            {pendingSiret && (
+              <Text fontSize="xs" color="brand.accent" fontWeight="bold" mt={1}>
+                Structure identifiée : SIRET {pendingSiret}
+              </Text>
+            )}
+          </Box>
 
-      <h1>Signup Form</h1>
-    
-      <form onSubmit={handleSignup}>
+          {errors.server && (
+            <Text color="red.500" fontSize="sm" textAlign="center" fontWeight="medium">
+              ⚠️ {errors.server}
+            </Text>
+          )}
 
-        <label>Email:</label>
-        <input
-          type="email"
-          name="email"
-          value={email}
-          onChange={handleEmailChange}
-        />
+          <FormControl isRequired isInvalid={!!errors.username}>
+            <FormLabel fontWeight="semibold" fontSize="sm" color="brand.primary">Nom d&apos;utilisateur</FormLabel>
+            <Input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ex: Jean Dupont"
+              focusBorderColor="brand.accent"
+              borderColor="brand.border"
+            />
+            <FormErrorMessage>{errors.username}</FormErrorMessage>
+          </FormControl>
 
-        <br />
+          <FormControl isRequired isInvalid={!!errors.email}>
+            <FormLabel fontWeight="semibold" fontSize="sm" color="brand.primary">Adresse Email</FormLabel>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jean.dupont@entreprise.fr"
+              focusBorderColor="brand.accent"
+              borderColor="brand.border"
+            />
+            <FormErrorMessage>{errors.email}</FormErrorMessage>
+          </FormControl>
 
-        <label>Username:</label>
-        <input
-          type="text"
-          name="username"
-          value={username}
-          onChange={handleUsernameChange}
-        />
+          <FormControl isRequired isInvalid={!!errors.password}>
+            <FormLabel fontWeight="semibold" fontSize="sm" color="brand.primary">Mot de passe</FormLabel>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              focusBorderColor="brand.accent"
+              borderColor="brand.border"
+            />
+            <FormErrorMessage>{errors.password}</FormErrorMessage>
+          </FormControl>
 
-        <br />
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            loadingText="Création du Cockpit en cours..."
+            w="full"
+            h="50px"
+            bg="brand.accent"
+            color="white"
+            _hover={{ opacity: 0.9 }}
+            mt={4}
+          >
+            Valider et piloter mes aides ➔
+          </Button>
 
-        <label>Password:</label>
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={handlePasswordChange}
-        />
+          <Text fontSize="sm" color="brand.secondary" textAlign="center" mt={2}>
+            Déjà inscrit ?{" "}
+            <Link as={RouterLink} to="/login" color="brand.primary" fontWeight="bold" _hover={{ textDecoration: "none" }}>
+              Se connecter
+            </Link>
+          </Text>
 
-        <br />
-
-        <button type="submit">Signup</button>
-
-        {errorMessage && <p>{errorMessage}</p>}
-
-      </form>
-      
-    </div>
+        </VStack>
+      </Container>
+    </Box>
   );
 }
-
-export default Signup;
