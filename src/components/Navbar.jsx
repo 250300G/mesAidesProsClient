@@ -67,7 +67,7 @@ export default function Navbar() {
             </Link>
             <Link 
               as={RouterLink} 
-              to="/profile" 
+              to="/dashboard" 
               fontSize="sm" 
               fontWeight="medium" 
               color="brand.secondary" 
@@ -113,7 +113,7 @@ export default function Navbar() {
               {/* Menu mobile d'appoint pour les pages privées */}
               <Link 
                 as={RouterLink} 
-                to="/profile" 
+                to="/dashboard" 
                 fontSize="xs" 
                 color="brand.secondary" 
                 display={{ base: "inline-block", md: "none" }}
@@ -139,3 +139,4 @@ export default function Navbar() {
     </Box>
   );
 }
+

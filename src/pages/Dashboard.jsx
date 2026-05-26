@@ -1,167 +1,229 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import service from "../services/index.services";
-import { Box, Container, Heading, Text, SimpleGrid, Flex, Badge, Spinner, useToast, Button } from "@chakra-ui/react";
+import {
+  Box, Container, Heading, Text, Input, Select, Table, Tbody, Tr, Th, Thead, Td,
+  Button, Flex, useDisclosure, Modal, ModalOverlay, ModalContent,
+  ModalHeader, ModalCloseButton, ModalBody, ModalFooter, Stack, Spinner, useToast
+} from "@chakra-ui/react";
 
-export default function Dashboard() {
-  const toast = useToast();
+export default function DashboardPage() {
+  const [myFunds, setMyFunds] = useState([]);
+  const [filteredFunds, setFilteredFunds] = useState([]);
+  const [selectedFund, setSelectedFund] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userFunds, setUserFunds] = useState([]);
-  const [summary, setSummary] = useState({ totalAmount: 0, count: 0 });
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-  useEffect(() => {
-    document.title = "Mon Cockpit de Pilotage | Aides Pros";
-    fetchDashboardData();
-  }, []);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
-  const fetchDashboardData = async () => {
+  // 1. READ : Chargement des aides liées à l'entreprise
+  const fetchMyFunds = async () => {
     try {
-      setLoading(true);
-      // Appel à la route privée du tableau de bord de l'utilisateur connecté
-      const response = await service.get("/funds/dashboard");
-      
-      // Adaptation aux données renvoyées par ton modèle MongoDB (ou tableau vide par défaut)
-      const funds = response.data.results || [];
-      setUserFunds(funds);
-
-      // Calcul des indicateurs clés (KPI globaux)
-      const total = funds.reduce((acc, curr) => acc + (curr.maxAmount || 0), 0);
-      setSummary({ totalAmount: total, count: funds.length });
-    } catch (err) {
-      console.error("Erreur chargement cockpit:", err);
-      // Données de secours réalistes si ton point de terminaison backend est en cours de peaufinage
-      const fallbackFunds = [
-        { _id: "1", title: "Aide à la R&D Bpifrance", description: "Subvention pour l'innovation de rupture.", maxAmount: 25000, status: "TO_TREAT" },
-        { _id: "2", title: "Tremplin Transition Écologique", description: "Financement ADEME pour la décarbonation.", maxAmount: 10400, status: "SUBMITTED" }
-      ];
-      setUserFunds(fallbackFunds);
-      setSummary({ totalAmount: 35400, count: 2 });
+      const response = await service.get("/userFunds/my-cockpit"); // Ajusté selon ta route active
+      setMyFunds(response.data || []);
+      setFilteredFunds(response.data || []);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des aides :", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const updateFundStatus = async (fundId, newStatus) => {
+  useEffect(() => {
+    fetchMyFunds();
+  }, []);
+
+  // 2. FILTRAGE EN TEMPS RÉEL (Recherche & Catégories)
+  useEffect(() => {
+    let result = myFunds;
+
+    if (searchQuery) {
+      result = result.filter((item) =>
+        item.fundId?.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedCategory) {
+      result = result.filter((item) => item.fundId?.category === selectedCategory);
+    }
+
+    setFilteredFunds(result);
+  }, [searchQuery, selectedCategory, myFunds]);
+
+  // 3. UPDATE : Modifier l'avancement d'un dossier
+  const handleStatusChange = async (userFundId, newStatus) => {
     try {
-      await service.put(`/funds/status/${fundId}`, { status: newStatus });
+      await service.put(`/userFunds/${userFundId}`, { status: newStatus });
+      
       toast({
-        title: "Statut mis à jour.",
+        title: "Statut mis à jour",
         status: "success",
         duration: 2000,
-        isClosable: true,
       });
-      fetchDashboardData(); // Rechargement des positions
-    } catch (err) {
-      console.error(err);
-      // Simulation locale immédiate pour que l'interface bouge même si la route PUT n'est pas finalisée
-      setUserFunds(prev => prev.map(f => f._id === fundId ? { ...f, status: newStatus } : f));
+
+      // Rafraîchissement local des données
+      setMyFunds((prev) =>
+        prev.map((item) => (item._id === userFundId ? { ...item, status: newStatus } : item))
+      );
+      
+      if (selectedFund && selectedFund._id === userFundId) {
+        setSelectedFund((prev) => ({ ...prev, status: newStatus }));
+      }
+    } catch (error) {
+      console.error(error);
     }
+  };
+
+  // 4. DELETE : Supprimer une aide du suivi
+  const handleDeleteFund = async (userFundId) => {
+    try {
+      await service.delete(`/userFunds/${userFundId}`);
+      toast({
+        title: "Aide retirée",
+        description: "L'aide a été retirée de votre cockpit.",
+        status: "info",
+        duration: 3000,
+      });
+      setMyFunds((prev) => prev.filter((item) => item._id !== userFundId));
+      onClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const openDetails = (fundRecord) => {
+    setSelectedFund(fundRecord);
+    onOpen();
   };
 
   if (loading) {
     return (
-      <Flex minH="80vh" align="center" justify="center">
-        <Spinner size="xl" color="brand.accent" thickness="4px" />
+      <Flex minH="70vh" justify="center" align="center">
+        <Spinner size="xl" color="brand.primary" thickness="4px" />
       </Flex>
     );
   }
 
-  // Filtrage simple pour notre Kanban à 3 états "Zéro friction"
-  const toTreat = userFunds.filter(f => f.status === "TO_TREAT" || !f.status);
-  const submitted = userFunds.filter(f => f.status === "SUBMITTED");
-  const approved = userFunds.filter(f => f.status === "APPROVED");
-
   return (
-    <Box bg="brand.bgLight" minH="90vh" py={8} px={4}>
-      <Container maxW="7xl">
-        
-        {/* En-tête KPI Trésorerie globale */}
-        <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} mb={10} gap={4}>
+    <Box minH="90vh" bg="brand.bgLight" py={8}>
+      <Container maxW="container.lg">
+        <Flex justify="space-between" align="center" mb={6}>
           <Box>
-            <Heading as="h2" size="xl" color="brand.primary" fontWeight="black" letterSpacing="tight">
-              Mon Cockpit Professionnel
-            </Heading>
-            <Text color="brand.secondary" fontSize="sm" mt={1}>
-              Suivi opérationnel en temps réel de vos enveloppes financières.
-            </Text>
-          </Box>
-          <Box bg="white" px={6} py={4} borderRadius="xl" border="1px solid" borderColor="brand.border" shadow="sm">
-            <Text fontSize="10px" uppercase tracking="wider" color="gray.400" fontWeight="bold">Gisement Total Sécurisé</Text>
-            <Text fontSize="2xl" fontWeight="black" color="brand.accent">
-              {summary.totalAmount.toLocaleString("fr-FR")} €
-            </Text>
-            <Text fontSize="xs" color="gray.500">{summary.count} dispositifs suivis</Text>
+            <Heading size="xl" color="brand.primary" fontWeight="black">Votre Cockpit Financier</Heading>
+            <Text color="brand.secondary" mt={1}>Gestion et avancement de vos enveloppes d'aides publiques.</Text>
           </Box>
         </Flex>
 
-        {/* Le Board Kanban à 3 colonnes */}
-        <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
-          
-          {/* COLONNE 1 : À TRAITER */}
-          <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.200">
-            <Flex justify="space-between" align="center" mb={4} px={1}>
-              <Heading as="h3" size="xs" uppercase tracking="wider" color="brand.primary" fontWeight="bold">
-                📥 À traiter
-              </Heading>
-              <Badge colorScheme="gray" borderRadius="md" px={2}>{toTreat.length}</Badge>
-            </Flex>
-            {toTreat.map(fund => (
-              <Box key={fund._id} bg="white" p={4} borderRadius="lg" shadow="xs" border="1px solid" borderColor="brand.border" mb={3}>
-                <Heading as="h4" size="xs" color="brand.primary" fontWeight="bold" noOfLines={1}>{fund.title}</Heading>
-                <Text fontSize="xs" color="brand.secondary" my={2} noOfLines={2}>{fund.description}</Text>
-                <Flex justify="space-between" align="center" mt={3} pt={2} borderTop="1px dashed" borderColor="gray.100">
-                  <Text fontSize="sm" fontWeight="bold" color="brand.primary">{fund.maxAmount?.toLocaleString("fr-FR")} €</Text>
-                  <Button size="xs" colorScheme="blue" bg="brand.primary" color="white" onClick={() => updateFundStatus(fund._id, "SUBMITTED")}>
-                    Déposer le dossier ➔
-                  </Button>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
+        {/* BARRE DE FILTRES COMPACTE */}
+        <Flex gap={4} mb={6} bg="white" p={4} borderRadius="xl" shadow="sm">
+          <Input
+            placeholder="Rechercher un dispositif..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            focusBorderColor="brand.accent"
+          />
+          <Select
+            placeholder="Toutes les catégories"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            maxW="250px"
+          >
+            <option value="R&D">Innovation / R&D</option>
+            <option value="HIRING">Recrutement</option>
+            <option value="ENERGY">Transition Écologique</option>
+          </Select>
+        </Flex>
 
-          {/* COLONNE 2 : DOSSIER DÉPOSÉ */}
-          <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.200">
-            <Flex justify="space-between" align="center" mb={4} px={1}>
-              <Heading as="h3" size="xs" uppercase tracking="wider" color="brand.primary" fontWeight="bold">
-                ⏳ Dossier déposé
-              </Heading>
-              <Badge colorScheme="blue" borderRadius="md" px={2}>{submitted.length}</Badge>
-            </Flex>
-            {submitted.map(fund => (
-              <Box key={fund._id} bg="white" p={4} borderRadius="lg" shadow="xs" border="1px solid" borderColor="brand.border" mb={3}>
-                <Heading as="h4" size="xs" color="brand.primary" fontWeight="bold" noOfLines={1}>{fund.title}</Heading>
-                <Text fontSize="xs" color="brand.secondary" my={2} noOfLines={2}>{fund.description}</Text>
-                <Flex justify="space-between" align="center" mt={3} pt={2} borderTop="1px dashed" borderColor="gray.100">
-                  <Text fontSize="sm" fontWeight="bold" color="brand.primary">{fund.maxAmount?.toLocaleString("fr-FR")} €</Text>
-                  <Button size="xs" colorScheme="emerald" bg="brand.accent" color="white" onClick={() => updateFundStatus(fund._id, "APPROVED")}>
-                    Aide encaissée ✓
-                  </Button>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
+        {/* TABLEAU DES ENVELOPPES */}
+        <Box bg="white" borderRadius="xl" shadow="md" overflow="hidden" border="1px solid" borderColor="brand.border">
+          <Table variant="simple">
+            <Thead bg="gray.50">
+              <Tr>
+                <Th color="brand.primary">Dispositif</Th>
+                <Th color="brand.primary">Montant Estimé</Th>
+                <Th color="brand.primary">Statut du Dossier</Th>
+                <Th textAlign="right">Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {filteredFunds.length === 0 ? (
+                <Tr>
+                  <Td colSpan={4} textAlign="center" py={8} color="brand.secondary">
+                    Aucun dispositif en cours de suivi.
+                  </Td>
+                </Tr>
+              ) : (
+                filteredFunds.map((item) => (
+                  <Tr key={item._id} _hover={{ bg: "gray.50" }}>
+                    <Td fontWeight="semibold" color="brand.primary">{item.fundId?.title || "Dispositif sans nom"}</Td>
+                    <Td fontWeight="bold" color="brand.accent">
+                      {item.fundId?.maxAmount ? `${item.fundId.maxAmount.toLocaleString("fr-FR")} €` : "Sur devis"}
+                    </Td>
+                    <Td>
+                      <Select
+                        size="sm"
+                        w="200px"
+                        borderRadius="md"
+                        value={item.status || "À traiter"}
+                        onChange={(e) => handleStatusChange(item._id, e.target.value)}
+                      >
+                        <option value="À traiter">📁 À traiter (Gisement)</option>
+                        <option value="En cours">⏳ Dossier déposé</option>
+                        <option value="Validée">💰 Subvention obtenue</option>
+                      </Select>
+                    </Td>
+                    <Td textAlign="right">
+                      <Button size="sm" bg="brand.primary" color="white" onClick={() => openDetails(item)}>
+                        Détails
+                      </Button>
+                    </Td>
+                  </Tr>
+                ))
+              )}
+            </Tbody>
+          </Table>
+        </Box>
 
-          {/* COLONNE 3 : SUBVENTION OBTENUE */}
-          <Box bg="emerald.50" p={4} borderRadius="xl" border="1px solid" borderColor="green.200">
-            <Flex justify="space-between" align="center" mb={4} px={1}>
-              <Heading as="h3" size="xs" uppercase tracking="wider" color="green.700" fontWeight="bold">
-                🎉 Subvention obtenue
-              </Heading>
-              <Badge colorScheme="green" borderRadius="md" px={2}>{approved.length}</Badge>
-            </Flex>
-            {approved.map(fund => (
-              <Box key={fund._id} bg="white" p={4} borderRadius="lg" shadow="xs" border="1px solid" borderColor="green.100" mb={3}>
-                <Heading as="h4" size="xs" color="brand.primary" fontWeight="bold" noOfLines={1}>{fund.title}</Heading>
-                <Text fontSize="xs" color="brand.secondary" my={2} noOfLines={2}>{fund.description}</Text>
-                <Flex justify="space-between" align="center" mt={3} pt={2} borderTop="1px dashed" borderColor="gray.100">
-                  <Text fontSize="sm" fontWeight="bold" color="brand.accent">{fund.maxAmount?.toLocaleString("fr-FR")} €</Text>
-                  <Badge colorScheme="green" variant="subtle" fontSize="10px">Encaissé</Badge>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
-
-        </SimpleGrid>
-
+        {/* MODAL DE DÉTAILS DU DISPOSITIF */}
+        {selectedFund && (
+          <Modal isOpen={isOpen} onClose={onClose} isCentered>
+            <ModalOverlay />
+            <ModalContent borderRadius="2xl">
+              <ModalHeader color="brand.primary" fontWeight="bold">{selectedFund.fundId?.title}</ModalHeader>
+              <ModalCloseButton />
+              <ModalBody>
+                <Stack spacing={4}>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase">Description</Text>
+                    <Text fontSize="sm" color="brand.primary" mt={1}>{selectedFund.fundId?.description}</Text>
+                  </Box>
+                  <Flex justify="space-between" bg="gray.50" p={3} borderRadius="xl">
+                    <Box>
+                      <Text fontSize="xs" color="gray.400">Plafond Enveloppe</Text>
+                      <Text fontWeight="bold" color="brand.accent">
+                        {selectedFund.fundId?.maxAmount ? `${selectedFund.fundId.maxAmount.toLocaleString("fr-FR")} €` : "Sur devis"}
+                      </Text>
+                    </Box>
+                    <Box textAlign="right">
+                      <Text fontSize="xs" color="gray.400">Délai moyen</Text>
+                      <Text fontWeight="bold" color="brand.primary">⏱️ {selectedFund.fundId?.paymentDelayInDays || "60"} jours</Text>
+                    </Box>
+                  </Flex>
+                </Stack>
+              </ModalBody>
+              <ModalFooter borderTop="1px solid" borderColor="gray.100" gap={2}>
+                <Button colorScheme="red" variant="ghost" size="sm" onClick={() => handleDeleteFund(selectedFund._id)}>
+                  Retirer du Cockpit
+                </Button>
+                <Button bg="brand.primary" color="white" size="sm" onClick={onClose}>
+                  Fermer
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
       </Container>
     </Box>
   );

@@ -1,34 +1,42 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 
-// Pages
+// Pages publiques
 import HomePage from "./pages/HomePage";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import SimulationPage from "./pages/SimulationPage";
+
+// Pages privées
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 
-// Components
+// Layout
 import Navbar from "./components/Navbar";
 import PrivateOnly from "./components/PrivateOnly";
 
 function App() {
   return (
     <div>
-      {/* Ton Navbar propre et asymétrique */}
       <Navbar />
 
-      {/* Le conteneur principal de tes pages */}
       <Routes>
+        {/* ── PUBLIQUES ── */}
         <Route path="/" element={<HomePage />} />
         <Route path="/simulation" element={<SimulationPage />} />
-        <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        
-        {/* Espaces privés protégés */}
-        <Route path="/dashboard" element={<PrivateOnly><Dashboard /></PrivateOnly>} />
-        <Route path="/profile" element={<PrivateOnly><Profile /></PrivateOnly>} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* ── PRIVÉES ── */}
+        <Route
+          path="/dashboard"
+          element={<PrivateOnly><Dashboard /></PrivateOnly>}
+        />
+        {/* ✅ Route /profile ajoutée — reliée au lien "Configuration" de la Navbar */}
+        <Route
+          path="/profile"
+          element={<PrivateOnly><Profile /></PrivateOnly>}
+        />
       </Routes>
     </div>
   );
