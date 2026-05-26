@@ -34,7 +34,7 @@ export default function HomePage() {
           </Heading>
           
           <Text fontSize="md" color="brand.secondary" maxW="lg">
-            Entrez le numéro SIRET de votre entreprise pour analyser instantanément son éligibilité auprès de notre moteur prédictif.
+            Entrez le numéro SIRET de votre entreprise pour analyser instantanément votre éligibilité  avec notre moteur prédictif.
           </Text>
 
           <Box as="form" onSubmit={handleSubmit} w="full" mt={2}>

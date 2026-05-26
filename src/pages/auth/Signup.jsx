@@ -21,7 +21,6 @@ export default function Signup() {
     username: "",
     password: "",
     siret: pendingSiret,
-    companyName: "",
     codeNaf: "",
     region: "",
     revenue: "",
