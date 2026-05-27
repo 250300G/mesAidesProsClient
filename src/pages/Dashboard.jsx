@@ -171,7 +171,19 @@ export default function DashboardPage() {
                       >
                         <option value="À traiter">📁 À traiter (Gisement)</option>
                         <option value="En cours">⏳ Dossier déposé</option>
-                        <option value="Validée">💰 Subvention obtenue</option>
+                       
+                       
+                       
+                       
+                      <option value="Dossier déposé">
+⏳ Dossier déposé
+</option>
+
+<option value="Subvention obtenue">
+💰 Subvention obtenue
+</option>
+                     
+                     
                       </Select>
                     </Td>
                     <Td textAlign="right">

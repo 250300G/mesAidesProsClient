@@ -120,6 +120,19 @@ export default function Navbar() {
               >
                 Paramètres
               </Link>
+              <Link
+  as={RouterLink}
+  to="/contact"
+  fontSize="sm"
+  fontWeight="medium"
+  color="brand.secondary"
+  _hover={{
+    color: "brand.primary",
+    textDecoration: "none"
+  }}
+>
+  Contact
+</Link>
               <Button 
                 onClick={handleLogout} 
                 variant="outline" 
