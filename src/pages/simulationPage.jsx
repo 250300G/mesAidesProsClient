@@ -32,18 +32,27 @@ export default function SimulationPage() {
   const [realisticTotal, setRealisticTotal] = useState(0);
   const [categorizedFunds, setCategorizedFunds] = useState({});
   const [userRevenue, setUserRevenue] = useState(null);
+  // ✅ NOUVEAU : dénomination commerciale identifiée depuis sirene
+  const [companyInfo, setCompanyInfo] = useState(null);
 
-  // Pour le modal détail d'une aide
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedFund, setSelectedFund] = useState(null);
   const [addingToBoard, setAddingToBoard] = useState(false);
 
-  // ── Récupérer le revenue réel de l'utilisateur si connecté ──────────────
+  // ── Lookup dénomination depuis sirene (non bloquant, parallèle) ─────────
+  useEffect(() => {
+    if (!siret) return;
+    service.get(`/sirene/lookup?siret=${siret}`)
+      .then(res => setCompanyInfo(res.data))
+      .catch(() => {}); // Non bloquant — la simulation continue sans
+  }, [siret]);
+
+  // ── Revenue réel si connecté ─────────────────────────────────────────────
   useEffect(() => {
     if (isLoggedIn) {
       service.get("/auth/me")
         .then(res => setUserRevenue(res.data?.revenue || null))
-        .catch(() => {}); // Non bloquant
+        .catch(() => {});
     }
   }, [isLoggedIn]);
 
@@ -178,7 +187,10 @@ export default function SimulationPage() {
           borderRadius="2xl" shadow="xl" mb={8} textAlign="center">
           <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest"
             color="brand.accent" fontWeight="bold" mb={2}>
-            Enveloppe maximale mobilisable — SIRET : {siret}
+            {companyInfo?.companyName ? companyInfo.companyName : `SIRET ${siret}`}
+          </Text>
+          <Text fontSize="xs" color="brand.accent" letterSpacing="widest" fontWeight="bold" mb={2}>
+            {companyInfo?.codeNaf ? `NAF ${companyInfo.codeNaf} · ` : ""}SIRET {siret}
           </Text>
 
           <Heading as="h2" size="2xl" fontWeight="black" my={3}>
