@@ -6,7 +6,7 @@ import { AuthContext } from "./context/auth.context";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
-import SimulationPage from "./pages/SimulationPage";
+import Simulation from "./pages/Simulation";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AdminPage from "./pages/AdminPage";
@@ -31,7 +31,7 @@ function App() {
       <Routes>
         {/* Publiques */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/simulation" element={<SimulationPage />} />
+        <Route path="/simulation" element={<Simulation />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
