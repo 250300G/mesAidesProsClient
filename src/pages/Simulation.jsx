@@ -185,13 +185,31 @@ export default function SimulationPage() {
         {/* ── HERO KPI ── */}
         <Box bg="brand.primary" color="white" p={{ base: 6, md: 8 }}
           borderRadius="2xl" shadow="xl" mb={8} textAlign="center">
-          <Text fontSize="xs" textTransform="uppercase" letterSpacing="widest"
-            color="brand.accent" fontWeight="bold" mb={2}>
-            {companyInfo?.companyName ? companyInfo.companyName : `SIRET ${siret}`}
-          </Text>
-          <Text fontSize="xs" color="brand.accent" letterSpacing="widest" fontWeight="bold" mb={2}>
+         
+         <Text
+  fontSize="sm"
+  color="gray.200"
+  fontWeight="medium"
+  mb={2}
+>
+  {companyInfo?.companyName || "Entreprise identifiée"}
+</Text>
+
+<Text
+  fontSize="xs"
+  color="brand.accent"
+  letterSpacing="widest"
+  fontWeight="bold"
+  mb={2}
+>
+
+</Text>
+
+          <Text fontSize="xs" color="brand.accent" letterSpacing="widest" fontWeight="bold" mb={6}>
             {companyInfo?.codeNaf ? `NAF ${companyInfo.codeNaf} · ` : ""}SIRET {siret}
           </Text>
+
+
 
           <Heading as="h2" size="2xl" fontWeight="black" my={3}>
             {realisticTotal.toLocaleString("fr-FR")} €

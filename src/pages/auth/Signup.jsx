@@ -97,9 +97,7 @@ export default function Signup() {
         <VStack spacing={5} as="form" onSubmit={handleSignup} bg="white" p={{ base: 6, md: 8 }} borderRadius="2xl" shadow="xl" border="1px solid" borderColor="brand.border">
           <Box textAlign="center" w="full">
             <Heading size="lg" color="brand.primary">Créer mon espace</Heading>
-            <Text fontSize="sm" color="brand.secondary" mt={1}>
-              Saisissez votre SIRET — les informations entreprise sont récupérées automatiquement.
-            </Text>
+           
           </Box>
 
           {/* SIRET */}
@@ -124,10 +122,9 @@ export default function Signup() {
           {/* Carte entreprise identifiée */}
           {siretLookupState === "found" && companyData && (
             <Box w="full" bg="green.50" border="1px solid" borderColor="green.200" borderRadius="xl" px={4} py={3}>
-              <Flex align="center" gap={2} mb={1} wrap="wrap">
+              <Flex align="center" gap={2} mb={6} wrap="wrap">
                 <Badge colorScheme="green" fontSize="9px">✓ Entreprise identifiée</Badge>
-                {companyData.codeNaf && <Badge colorScheme="blue" variant="subtle" fontSize="9px">NAF {companyData.codeNaf}</Badge>}
-                {companyData.categorieEntreprise && <Badge colorScheme="purple" variant="subtle" fontSize="9px">{companyData.categorieEntreprise}</Badge>}
+              
               </Flex>
               {/* Dénomination commerciale en premier plan */}
               <Text fontWeight="bold" color="brand.primary" fontSize="md" lineHeight="short">
