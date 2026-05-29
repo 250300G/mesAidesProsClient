@@ -61,7 +61,7 @@ export default function Navbar() {
             to="/"
             fontSize="sm"
             fontWeight="medium"
-            color="brand.secondary"
+            color="brand.primary"
             _hover={{ color: "brand.primary", textDecoration: "none" }}
           >
             Accueil
@@ -71,7 +71,7 @@ export default function Navbar() {
             to="/funds"
             fontSize="sm"
             fontWeight="medium"
-            color="brand.secondary"
+          color="brand.primary"
             _hover={{ color: "brand.primary", textDecoration: "none" }}
           >
             Explorer les aides
@@ -81,7 +81,7 @@ export default function Navbar() {
             to="/simulation"
             fontSize="sm"
             fontWeight="medium"
-            color="brand.secondary"
+              color="brand.primary"
             _hover={{ color: "brand.primary", textDecoration: "none" }}
           >
             Simulation
@@ -92,7 +92,7 @@ export default function Navbar() {
               to="/dashboard"
               fontSize="sm"
               fontWeight="medium"
-              color="brand.secondary"
+               color="brand.primary"
               _hover={{ color: "brand.primary", textDecoration: "none" }}
             >
               Mon Cockpit
@@ -120,7 +120,7 @@ export default function Navbar() {
                 as={RouterLink}
                 to="/login"
                 variant="ghost"
-                color="brand.secondary"
+                  color="brand.primary"
                 fontSize="sm"
                 fontWeight="medium"
                 _hover={{ color: "brand.primary", bg: "gray.50" }}
@@ -158,10 +158,10 @@ export default function Navbar() {
                 onClick={handleLogout}
                 variant="outline"
                 borderColor="brand.border"
-                color="brand.secondary"
+                color="brand.accent"
                 size="sm"
                 fontSize="xs"
-                _hover={{ bg: "gray.50", color: "brand.primary" }}
+                _hover={{ bg: "gray.50", color: "brand.primay" }}
               >
                 Déconnexion
               </Button>
